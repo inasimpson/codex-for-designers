@@ -46,6 +46,30 @@ type WeatherResponse = {
   timezone?: string;
 };
 
+type WeatherStatus = "loading" | "success" | "error";
+
+type WeatherSnapshot = {
+  status: WeatherStatus;
+  temperature: number | null;
+  unit: string;
+  timezone: string;
+};
+
+const DEFAULT_WEATHER_BY_CITY: Record<CityKey, WeatherSnapshot> = {
+  lofoten: {
+    status: "loading",
+    temperature: null,
+    unit: "°",
+    timezone: "Europe/Oslo",
+  },
+  sydney: {
+    status: "loading",
+    temperature: null,
+    unit: "°",
+    timezone: "Australia/Sydney",
+  },
+};
+
 function formatTime(now: Date, timezone: string) {
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -57,33 +81,46 @@ function formatTime(now: Date, timezone: string) {
 
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<CityKey>("lofoten");
-  const [temperature, setTemperature] = useState<number | null>(null);
-  const [unit, setUnit] = useState("°");
-  const [timezone, setTimezone] = useState("Europe/Oslo");
+  const [weatherByCity, setWeatherByCity] =
+    useState<Record<CityKey, WeatherSnapshot>>(DEFAULT_WEATHER_BY_CITY);
   const [now, setNow] = useState(() => new Date());
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
-  );
 
   const city = CITY_PRESETS[selectedCity];
+  const weather = weatherByCity[selectedCity];
 
   useEffect(() => {
-    const controller = new AbortController();
+    const controllers = new Map<CityKey, AbortController>();
 
-    async function loadWeather() {
-      setStatus("loading");
+    async function loadWeather(cityKey: CityKey) {
+      const preset = CITY_PRESETS[cityKey];
+      const controller = new AbortController();
+      controllers.set(cityKey, controller);
+
+      setWeatherByCity((current) => ({
+        ...current,
+        [cityKey]: {
+          ...current[cityKey],
+          status:
+            current[cityKey].temperature === null
+              ? "loading"
+              : current[cityKey].status,
+        },
+      }));
 
       try {
         const params = new URLSearchParams({
-          latitude: String(city.latitude),
-          longitude: String(city.longitude),
+          latitude: String(preset.latitude),
+          longitude: String(preset.longitude),
           current: "temperature_2m",
           timezone: "auto",
         });
 
         const response = await fetch(
           `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
-          { signal: controller.signal },
+          {
+            signal: controller.signal,
+            cache: "no-store",
+          },
         );
 
         if (!response.ok) {
@@ -96,24 +133,39 @@ export default function Home() {
           throw new Error("Weather response was incomplete");
         }
 
-        setTemperature(data.current.temperature_2m);
-        setUnit(data.current_units.temperature_2m);
-        setTimezone(data.timezone);
-        setStatus("success");
+        setWeatherByCity((current) => ({
+          ...current,
+          [cityKey]: {
+            status: "success",
+            temperature: data.current!.temperature_2m,
+            unit: data.current_units!.temperature_2m,
+            timezone: data.timezone!,
+          },
+        }));
       } catch (error) {
         if (controller.signal.aborted) {
           return;
         }
 
         console.error(error);
-        setStatus("error");
+
+        setWeatherByCity((current) => ({
+          ...current,
+          [cityKey]: {
+            ...current[cityKey],
+            status: "error",
+          },
+        }));
       }
     }
 
-    loadWeather();
+    loadWeather("lofoten");
+    loadWeather("sydney");
 
-    return () => controller.abort();
-  }, [city.latitude, city.longitude]);
+    return () => {
+      controllers.forEach((controller) => controller.abort());
+    };
+  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -124,14 +176,14 @@ export default function Home() {
   }, []);
 
   const temperatureLabel =
-    status === "loading"
+    weather.status === "loading"
       ? "--"
-      : status === "error" || temperature === null
+      : weather.status === "error" || weather.temperature === null
         ? "??"
-        : `${Math.round(temperature)}${unit.replace("C", "")}`;
+        : `${Math.round(weather.temperature)}${weather.unit.replace("C", "")}`;
 
-  const timeLabel = formatTime(now, timezone);
-  const statusCopy = city.statusCopy[status];
+  const timeLabel = formatTime(now, weather.timezone);
+  const statusCopy = city.statusCopy[weather.status];
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#a9b0ab_0%,_#7b837e_28%,_#555d59_62%,_#3a423f_100%)] px-5 py-6 text-white sm:px-8 sm:py-10">
