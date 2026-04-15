@@ -8,19 +8,105 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Avenir Next", "Segoe UI", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #4b524f;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.weather-card {
+  background:
+    linear-gradient(180deg, rgba(133, 141, 136, 0.92) 0%, rgba(91, 98, 94, 0.92) 45%, rgba(58, 65, 64, 0.96) 100%),
+    linear-gradient(180deg, #78817d 0%, #626965 46%, #4d5451 72%, #3d4441 100%);
+}
+
+.weather-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 30%, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px),
+    radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px),
+    radial-gradient(circle at 60% 80%, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px);
+  background-size: 7px 7px, 9px 9px, 11px 11px, 13px 13px;
+  mix-blend-mode: soft-light;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.weather-ridge {
+  background: linear-gradient(180deg, rgba(22, 29, 34, 0.95), rgba(47, 57, 58, 0.96));
+}
+
+.weather-ridge-back {
+  clip-path: polygon(0 88%, 9% 72%, 16% 78%, 28% 54%, 41% 72%, 54% 48%, 66% 69%, 79% 52%, 90% 70%, 100% 58%, 100% 100%, 0 100%);
+  opacity: 0.28;
+}
+
+.weather-ridge-mid {
+  clip-path: polygon(0 100%, 0 24%, 20% 7%, 29% 18%, 35% 4%, 45% 24%, 53% 20%, 62% 37%, 75% 32%, 88% 56%, 100% 71%, 100% 100%);
+}
+
+.weather-ridge-right {
+  clip-path: polygon(0 100%, 0 68%, 15% 50%, 28% 56%, 36% 40%, 49% 30%, 61% 37%, 76% 18%, 88% 23%, 100% 0, 100% 100%);
+}
+
+.weather-ridge-front {
+  background: linear-gradient(180deg, rgba(29, 35, 39, 0.94), rgba(19, 23, 27, 0.98));
+  clip-path: polygon(0 100%, 0 54%, 11% 40%, 20% 50%, 33% 44%, 50% 55%, 66% 47%, 81% 59%, 100% 49%, 100% 100%);
+}
+
+.weather-water {
+  background:
+    linear-gradient(180deg, rgba(170, 175, 170, 0.2) 0%, rgba(86, 95, 96, 0.58) 32%, rgba(57, 66, 68, 0.94) 100%);
+}
+
+.weather-shore {
+  background: linear-gradient(180deg, rgba(26, 31, 35, 0.98), rgba(12, 15, 18, 0.98));
+}
+
+.weather-shore-left {
+  clip-path: polygon(0 100%, 0 62%, 16% 48%, 28% 57%, 44% 41%, 61% 52%, 79% 50%, 100% 66%, 100% 100%);
+}
+
+.weather-shore-right {
+  clip-path: polygon(0 100%, 0 70%, 24% 54%, 41% 52%, 58% 42%, 79% 60%, 100% 54%, 100% 100%);
+}
+
+.weather-tree {
+  width: clamp(10px, 1vw, 16px);
+  height: clamp(68px, 9vw, 112px);
+  background: linear-gradient(180deg, rgba(18, 22, 26, 0.96), rgba(6, 8, 11, 0.98));
+  clip-path: polygon(45% 100%, 55% 100%, 54% 80%, 80% 80%, 57% 61%, 74% 61%, 54% 43%, 67% 43%, 50% 22%, 31% 43%, 46% 43%, 26% 61%, 43% 61%, 20% 80%, 46% 80%);
+}
+
+.weather-tree-left-1,
+.weather-tree-right-2 {
+  transform: scale(1.12);
+}
+
+.weather-tree-left-2,
+.weather-tree-right-1 {
+  transform: scale(1.36);
+}
+
+.weather-tree-left-3 {
+  transform: scale(1.18);
+}
+
+.weather-tree-left-4,
+.weather-tree-center-1,
+.weather-tree-center-2 {
+  transform: scale(0.82);
 }
