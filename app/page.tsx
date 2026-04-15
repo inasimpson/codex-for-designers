@@ -1,13 +1,40 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const LOCATION = {
-  name: "Lofoten",
-  country: "Norway",
-  latitude: 68.234,
-  longitude: 14.568,
-};
+const CITY_PRESETS = {
+  lofoten: {
+    name: "Lofoten",
+    country: "Norway",
+    latitude: 68.234,
+    longitude: 14.568,
+    image: "/Lofoten.png",
+    alt: "Illustrated mountain landscape of Lofoten",
+    overlayClassName: "weather-overlay weather-overlay-lofoten",
+    statusCopy: {
+      loading: "Fetching the latest temperature from Open-Meteo...",
+      success: "Live weather for the Lofoten islands.",
+      error: "Weather unavailable right now. Check your connection and retry.",
+    },
+  },
+  sydney: {
+    name: "Sydney",
+    country: "Australia",
+    latitude: -33.8688,
+    longitude: 151.2093,
+    image: "/Sydney.png",
+    alt: "Illustrated Sydney Opera House and Harbour Bridge",
+    overlayClassName: "weather-overlay weather-overlay-sydney",
+    statusCopy: {
+      loading: "Fetching the latest temperature from Open-Meteo...",
+      success: "Live weather over Sydney Harbour.",
+      error: "Weather unavailable right now. Check your connection and retry.",
+    },
+  },
+} as const;
+
+type CityKey = keyof typeof CITY_PRESETS;
 
 type WeatherResponse = {
   current?: {
@@ -29,6 +56,7 @@ function formatTime(now: Date, timezone: string) {
 }
 
 export default function Home() {
+  const [selectedCity, setSelectedCity] = useState<CityKey>("lofoten");
   const [temperature, setTemperature] = useState<number | null>(null);
   const [unit, setUnit] = useState("°");
   const [timezone, setTimezone] = useState("Europe/Oslo");
@@ -36,6 +64,8 @@ export default function Home() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
+
+  const city = CITY_PRESETS[selectedCity];
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,8 +75,8 @@ export default function Home() {
 
       try {
         const params = new URLSearchParams({
-          latitude: String(LOCATION.latitude),
-          longitude: String(LOCATION.longitude),
+          latitude: String(city.latitude),
+          longitude: String(city.longitude),
           current: "temperature_2m",
           timezone: "auto",
         });
@@ -83,7 +113,7 @@ export default function Home() {
     loadWeather();
 
     return () => controller.abort();
-  }, []);
+  }, [city.latitude, city.longitude]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -101,33 +131,21 @@ export default function Home() {
         : `${Math.round(temperature)}${unit.replace("C", "")}`;
 
   const timeLabel = formatTime(now, timezone);
-  const statusCopy = {
-    loading: "Fetching the latest temperature from Open-Meteo...",
-    success: "Live weather for the Lofoten islands.",
-    error: "Weather unavailable right now. Check your connection and retry.",
-  }[status];
+  const statusCopy = city.statusCopy[status];
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#a9b0ab_0%,_#7b837e_28%,_#555d59_62%,_#3a423f_100%)] px-5 py-6 text-white sm:px-8 sm:py-10">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-6xl items-center justify-center">
-        <section className="weather-card weather-grain relative isolate aspect-square w-full max-w-[760px] overflow-hidden rounded-[2rem] px-6 py-6 shadow-[0_32px_90px_rgba(15,18,20,0.28)] sm:px-10 sm:py-10">
-          <div className="weather-moon absolute left-1/2 top-[27%] h-20 w-20 -translate-x-1/2 rounded-full bg-white/12 blur-[1px] sm:h-28 sm:w-28" />
-          <div className="weather-ridge weather-ridge-back absolute inset-x-0 bottom-[24%] h-[38%]" />
-          <div className="weather-ridge weather-ridge-mid absolute bottom-[11%] left-[-4%] h-[62%] w-[54%]" />
-          <div className="weather-ridge weather-ridge-right absolute bottom-[10%] right-[-2%] h-[49%] w-[47%]" />
-          <div className="weather-ridge weather-ridge-front absolute inset-x-0 bottom-0 h-[20%]" />
-          <div className="weather-water absolute inset-x-0 bottom-0 h-[15%]" />
-          <div className="weather-shore weather-shore-left absolute bottom-[10%] left-0 h-[15%] w-[42%]" />
-          <div className="weather-shore weather-shore-right absolute bottom-[9%] right-0 h-[13%] w-[33%]" />
-
-          <div className="weather-tree weather-tree-left-1 absolute bottom-[13%] left-[6%]" />
-          <div className="weather-tree weather-tree-left-2 absolute bottom-[14%] left-[11%]" />
-          <div className="weather-tree weather-tree-left-3 absolute bottom-[13.5%] left-[16%]" />
-          <div className="weather-tree weather-tree-left-4 absolute bottom-[11.5%] left-[23%]" />
-          <div className="weather-tree weather-tree-center-1 absolute bottom-[12.5%] left-[46%]" />
-          <div className="weather-tree weather-tree-center-2 absolute bottom-[12.5%] left-[49%]" />
-          <div className="weather-tree weather-tree-right-1 absolute bottom-[13.5%] right-[13%]" />
-          <div className="weather-tree weather-tree-right-2 absolute bottom-[12%] right-[8%]" />
+        <section className="weather-card relative isolate aspect-square w-full max-w-[760px] overflow-hidden rounded-[2rem] px-6 py-6 shadow-[0_32px_90px_rgba(15,18,20,0.28)] sm:px-10 sm:py-10">
+          <Image
+            src={city.image}
+            alt={city.alt}
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 760px"
+            className="object-cover"
+          />
+          <div className={city.overlayClassName} />
 
           <div className="relative z-10 flex h-full flex-col justify-between">
             <div className="flex items-start justify-between gap-4">
@@ -147,16 +165,39 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="max-w-xs">
-              <p className="text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
-                {LOCATION.name}
-              </p>
-              <p className="mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
-                {LOCATION.country}
-              </p>
-              <p className="mt-5 max-w-[18rem] text-sm font-medium text-white/76 sm:text-base">
-                {statusCopy}
-              </p>
+            <div className="flex items-end justify-between gap-6">
+              <div className="max-w-xs">
+                <p className="text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
+                  {city.name}
+                </p>
+                <p className="mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
+                  {city.country}
+                </p>
+                <p className="mt-5 max-w-[18rem] text-sm font-medium text-white/78 sm:text-base">
+                  {statusCopy}
+                </p>
+              </div>
+
+              <div className="city-toggle relative z-20 shrink-0 rounded-full border border-white/22 bg-black/26 p-1 backdrop-blur-md">
+                {(
+                  Object.entries(CITY_PRESETS) as Array<
+                    [CityKey, (typeof CITY_PRESETS)[CityKey]]
+                  >
+                ).map(([key, preset]) => {
+                  const isActive = key === selectedCity;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedCity(key)}
+                      className={`city-toggle__button ${isActive ? "city-toggle__button--active" : ""}`}
+                    >
+                      {preset.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
